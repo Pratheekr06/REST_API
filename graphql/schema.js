@@ -10,7 +10,7 @@ module.exports = buildSchema(`
         hello: TestData!
     }
 
-    type userInputData {
+    input userInputData {
         name: String!
         email: String!
         password: String!
