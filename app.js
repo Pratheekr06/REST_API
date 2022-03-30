@@ -10,6 +10,10 @@ const MongoDbStore = require('connect-mongodb-session')(session);
 const csurf = require('csurf');
 require("dotenv").config();
 
+const  { graphqlHTTP } = require('express-graphql');
+const graphqlSchema = require('./graphql/schema');
+const graphqlResolvers = require('./graphql/resolvers');
+
 const feedRoutes = require('./routes/feed');
 const authRoutes = require('./routes/auth');
 
@@ -53,18 +57,30 @@ app.use((req, res, next) => {
 app.use('/feed', feedRoutes);
 app.use(authRoutes);
 
+app.use('/graphql', graphqlHTTP({
+    schema: graphqlSchema,
+    rootValue: graphqlResolvers,
+    formatError(err) {
+        if (!err.originalError) return err;
+        return {
+            message: err.message,
+            data: err.data,
+            code: err.originalError && err.originalError.code,
+        }
+    }
+}))
+
 app.use((error, req, res, next) => {
     console.log(error);
-    res.status(error.statusCode).json({ message: error.message });
+    const status = error.statusCode || 500;
+    res.status(status).json({ message: error.message });
 })
 
 mongoose.connect(process.env.DB_URI);
 const connection = mongoose.connection;
 connection.once('open', () => {
     console.log('Database Connected');
-    const server = app.listen(8080);
-    const io = require('./socket').init(server);
-    io.on('connection', socket => console.log('Client Connected'))
+    app.listen(8080, () => console.log('Server Connected'))
 });
 
 connection.on('disconnected', () => {

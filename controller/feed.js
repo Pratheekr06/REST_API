@@ -1,7 +1,6 @@
 const Post = require('../models/post');
 const { validationResult } = require('express-validator');
 const fileHelper = require('../util/fileHelper');
-const io = require('../socket');
 
 exports.getPosts = (req, res, next) => {
     const page = req.query.pageNo;
@@ -44,7 +43,6 @@ exports.createPost = (req, res, next) => {
     });
     post.save()
         .then(result => {
-            io.getIO().emit('posts', { action: 'create', post: post })
             res.status(201).json({
                 message: 'Post created successfully',
                 post: result
